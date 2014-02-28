@@ -31,6 +31,8 @@ sub new
     organizations => decode_json($assert_attrs->organizations),
   };
   
+  bless($self, $class);
+  
   return $self;
 }
 

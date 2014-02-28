@@ -31,6 +31,8 @@ sub new
     recheck  => DateTime::Format::HTTP->parse_datetime($session->param('mno_session_recheck')),
   };
   
+  bless($self, $class);
+  
   return $self;
 }
 
