@@ -179,7 +179,7 @@ sub set_local_uid
 sub sync_local_details
 {
   my ($self) = @_;
- return true;
+  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
 }
 
 #
