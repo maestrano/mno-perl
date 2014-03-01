@@ -114,6 +114,7 @@ sub verify {
 
     $self->{ parser } = XML::XPath->new( xml => $xml );
     $self->{ parser }->set_namespace('dsig', 'http://www.w3.org/2000/09/xmldsig#');
+    $self->{ parser }->set_namespace('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
 
     my $signature = _trim($self->{parser}->findvalue('//dsig:Signature/dsig:SignatureValue'));
     my $signed_info_node = $self->_get_node('//dsig:Signature/dsig:SignedInfo');
@@ -160,8 +161,8 @@ sub verify {
     my $digest = _trim($self->{parser}->findvalue('//dsig:Signature/dsig:SignedInfo/dsig:Reference/dsig:DigestValue'));
     
     my $signed_xml    = $self->_get_signed_xml();
-    my $canonical     = $self->_transform( $signed_xml );
-    my $digest_bin    = sha1( $canonical ); 
+    my $canonical     = $self->_transform($signed_xml, $signature_node);
+    my $digest_bin    = sha1($canonical);
 
     return 1 if ($digest eq _trim(encode_base64($digest_bin)));
     return 0;
@@ -192,15 +193,39 @@ sub _get_signed_xml {
 
 sub _transform {
     my $self = shift;
-    my ($xml) = @_;
-    foreach my $node ($self->{parser}->find('//dsig:Transform/@Algorithm')->get_nodelist) {
-        my $alg = $node->getNodeValue;
-        if ($alg eq TRANSFORM_ENV_SIG) { $xml = $self->_transform_env_sig($xml); }
-        elsif ($alg eq TRANSFORM_EXC_C14N) { $xml = $self->_canonicalize_xml($xml,0); }
-        elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) { $xml = $self->_canonicalize_xml($xml,1); }
-        else { die "Unsupported transform: $alg"; }
+    my ($xml, $context) = @_;
+
+    my $transforms = $self->{parser}->find(
+        'dsig:SignedInfo/dsig:Reference/dsig:Transforms/dsig:Transform', 
+        $context
+    );
+
+    foreach my $node ($transforms->get_nodelist) {
+        my $alg = $node->getAttribute('Algorithm');
+
+        if ($alg eq TRANSFORM_ENV_SIG) {
+            $xml = $self->_transform_env_sig($xml);
+        }
+        elsif ($alg eq TRANSFORM_EXC_C14N) {
+            my $prefixlist = $self->_find_prefixlist($node);
+            $xml = $self->_canonicalize_xml($xml, 0, $prefixlist);
+        }
+        elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
+            my $prefixlist = $self->_find_prefixlist($node);
+            $xml = $self->_canonicalize_xml($xml, 1, $prefixlist);
+        }
+        else {
+            die "Unsupported transform: $alg";
+        }
     }
     return $xml;
+}
+
+sub _find_prefixlist {
+    my $self = shift;
+    my ($node) = @_;
+    my $prefixlist = $self->{parser}->findvalue('ec:InclusiveNamespaces/@PrefixList', $node);
+    return $prefixlist;
 }
 
 sub _verify_rsa {
@@ -225,6 +250,19 @@ sub _verify_rsa {
 sub _clean_x509 {
     my $self = shift;
     my ($cert) = @_;
+
+    # rewrap the base64 data from the certificate; it may not be
+    # wrapped at 64 characters as PEM requires
+    $cert =~ s/\n//g;
+    
+    my @lines;
+    while (length $cert > 64) {
+            push @lines, substr $cert, 0, 64, '';
+        }
+    push @lines, $cert;
+    
+    $cert = join "\n", @lines;
+
     $cert = "-----BEGIN CERTIFICATE-----\n" . $cert . "\n-----END CERTIFICATE-----\n";
     return $cert;
 }
@@ -243,7 +281,7 @@ sub _verify_x509 {
 
     # This is added because the X509 parser requires it for self-identification
     $certificate = $self->_clean_x509($certificate);
-        
+
     my $cert = Crypt::OpenSSL::X509->new_from_string($certificate);
     return $self->_verify_x509_cert($cert, $canonical, $sig);
 }
@@ -560,18 +598,27 @@ sub _reference_xml {
 
 sub _canonicalize_xml {
     my $self = shift;
-    my ($xml,$comments) = @_;
+    my ($xml,$comments,$prefixlist) = @_;
     $comments = 0 unless $comments;
+    $prefixlist = '' unless $prefixlist;
 
     if ( $self->{canonicalizer} eq 'XML::Canonical' ) {
         require XML::Canonical;
+
+        # XML::Canonical doesn't support a prefix list, so
+        # InclusiveNamespaces will have no effect
+
         my $xmlcanon = XML::Canonical->new( comments => $comments );
         return $xmlcanon->canonicalize_string( $xml );
     }
     elsif ( $self->{ canonicalizer } eq 'XML::CanonicalizeXML' ) {
         require XML::CanonicalizeXML;
         my $xpath = '<XPath>(//. | //@* | //namespace::*)</XPath>';
-        return XML::CanonicalizeXML::canonicalize( $xml, $xpath, [], 1, $comments );
+
+        # adjust prefixlist from attribute for XML::CanonicalizeXML's format
+        $prefixlist =~ s/ /,/g;
+
+        return XML::CanonicalizeXML::canonicalize( $xml, $xpath, $prefixlist, 1, $comments );
     }
     else {
         confess "Unknown XML canonicalizer module.";

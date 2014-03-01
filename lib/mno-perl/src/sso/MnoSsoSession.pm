@@ -23,7 +23,7 @@ sub new
   my $session      = shift;
   
   # Populate attributes from params
-  $self = {
+  my $self = {
     settings => $mno_settings,
     session  => $session,
     uid      => $session->param('mno_uid'),
@@ -46,8 +46,8 @@ sub remote_check_required
 {
   my ($self) = @_;
   
-  if (defined($self->{uid}) && defined($self->{token}) && defined($self->{recheck})) {
-   if ($self->{recheck} > (DateTime->now)) {
+  if (defined($self->uid) && defined($self->token) && defined($self->recheck)) {
+   if ($self->recheck > (DateTime->now)) {
      return undef;
    }
   }
@@ -94,7 +94,7 @@ sub perform_remote_check
   my $json = $self->fetch_url($self->session_check_url());
  
   if ($json) {
-    $response = decode_json($json);
+    my %response = decode_json($json);
   
     if ($response{'valid'} && $response{'recheck'}) {
       $self->recheck = DateTime::Format::HTTP->parse_datetime($response{'recheck'});
@@ -120,7 +120,13 @@ sub is_valid
   
   if ($self->remote_check_required()) {
     if ($self->perform_remote_check()) {
-      $self->session->param('mno_session_recheck',$self->recheck->format(DateTime::ISO8601));
+      # ISO8601 Date Formating
+      # We need to munge the timezone indicator to add a colon between the hour and minute part
+      my $tz = strftime("%z", localtime(time()));
+      $tz =~ s/(\d{2})(\d{2})/$1:$2/;
+      my $iso8601_recheck = strftime("%Y-%m-%dT%H:%M:%S", $self->recheck) . $tz;
+      
+      $self->session->param('mno_session_recheck',$iso8601_recheck);
       
       return 1;
     } else {
@@ -130,3 +136,7 @@ sub is_valid
     return 1;
   }
 }
+
+
+
+1;

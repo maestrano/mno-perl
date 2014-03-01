@@ -14,13 +14,12 @@ our @ISA = qw(MnoSsoBaseUser);    # inherits from MnoSsoBaseUser
 # - opts (hash of options)
 sub new
 {
-  my ($class, $saml_response,$session,$opts) = @_;
-  $opts = {} if !defined($opts);
+  my ($class, $saml_response,$session,%opts) = @_;
   
   my $self = $class->SUPER::new($saml_response, $session);
   
   # Define connection
-  $self->{connection} = $opts->{connection};
+  $self->{connection} = $opts{'connection'};
   
   bless($self, $class);
   return $self;
@@ -51,6 +50,48 @@ sub new
 # {
 #   my ($self) = @_;
 #   die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+# }
+
+#
+# Build a local user for creation
+#
+# Return a user or hash of attributes
+#
+# sub build_local_user
+# {
+#   my ($self) = @_;
+#   die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+# }
+
+#
+# Create the role to give to the user based on context
+# If the user is the owner of the app or at least Admin
+# for each organization, then it is given the role of 'Admin'.
+# Return 'User' role otherwise
+#
+# Return the role id
+#
+# sub get_role_id_to_assign 
+# {
+#   my ($self) = @_;
+#   
+#   my $role_id = 2; # User
+#   
+#   if ($self->app_owner) {
+#     $role_id = 1; # Admin
+#   } else {
+#     foreach ($self->organizations) {
+#       my $organization = $_;
+#       
+#       if ($organization{'role'} eq 'Admin' || $organization{'role'} eq 'Super Admin') {
+#         $role_id = 1;
+#       } else {
+#         $role_id = 2;
+#       }
+#     }
+#   }
+#   
+#   return $role_id;
 # }
 
 #

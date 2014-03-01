@@ -60,6 +60,9 @@ my $sso_access_logout_url = '';
 #
 my $sso_x509_certificate = '';
 
+# Path to the CA cert
+# String
+my $sso_cacert_path = '';
 
 #
 # Specifies what format to return the identification token (Maestrano user UID)
@@ -89,15 +92,41 @@ sub new
     sso_access_logout_url       => $sso_access_logout_url,
     sso_x509_certificate        => $sso_x509_certificate,
     sso_name_id_format          => $sso_name_id_format,
-    sso_session_check_url       => $sso_session_check_url
+    sso_session_check_url       => $sso_session_check_url,
+    sso_cacert_path             => $sso_cacert_path
   };
   
   bless($self, $class);
   return $self;
 }
 
-# Return a settings object for Net::SAML2
-sub get_saml_settings
+# Return a settings object for Net::SAML2::Idp
+sub get_saml_idp_settings
 {
+  my ($self) = @_;
   
+  return {
+    entityid => 'Maestrano',
+    cacert => $self->{sso_cacert_path},
+    certs => { 'signing' => $self->{sso_x509_certificate} },
+    sso_urls => { 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect' => $self->{sso_url} },
+    slo_urls => {},
+    art_urls => {},
+    default_format => $self->{sso_name_id_format},
+    formats => {}
+  };
 }
+
+# Return a settings object for the SAML request
+sub get_saml_request_settings
+{
+  my ($self) = @_;
+  
+  return (
+    issuer        => $self->{app_name},
+    destination   => URI->new($self->{sso_return_url}),
+    nameid_format => $self->{sso_name_id_format},
+    );
+}
+
+1;

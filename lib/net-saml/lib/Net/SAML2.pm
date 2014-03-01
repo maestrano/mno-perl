@@ -4,7 +4,7 @@ use warnings;
 
 require 5.008_001;
 
-our $VERSION = '0.15';
+our $VERSION = '0.17';
 $VERSION = eval $VERSION;
 
 =head1 NAME
@@ -19,8 +19,9 @@ Net::SAML2 - SAML bindings and protocol implementation
         my $sso_url = $idp->sso_url('urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect');
         
         my $authnreq = Net::SAML2::Protocol::AuthnRequest->new(
-                issuer      => 'http://localhost:3000/metadata.xml',
-                destination => $sso_url,
+                issuer        => 'http://localhost:3000/metadata.xml',
+                destination   => $sso_url,
+                nameid_format => $idp->format('persistent'),
         )->as_xml;
 
         my $redirect = Net::SAML2::Binding::Redirect->new(
@@ -92,7 +93,7 @@ The following copyright notice applies to all the files provided in
 this distribution, including binary files, unless explicitly noted
 otherwise.
 
-Copyright 2010 Venda Ltd.
+Copyright 2010, 2011 Venda Ltd.
 
 =head1 LICENCE
 

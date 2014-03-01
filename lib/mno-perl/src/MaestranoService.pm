@@ -16,7 +16,8 @@ sub instance {
 # used.
 # Parameter should be an instance of MnoSettings
 sub configure {
-  $settings = shift;  
+  my $class = shift;
+  $settings = shift;
 }
 
 # Constructor
@@ -26,6 +27,7 @@ sub new {
     settings               => $settings,
     after_sso_sign_in_path => $default_after_sso_sign_in_path,
   };
+  
   
   bless($self, $class);
   return $self;
@@ -40,7 +42,7 @@ sub get_settings
 {
   my ($self) = @_;
   
-  return $self->settings;
+  return $self->{settings};
 }
 
 #
@@ -52,8 +54,8 @@ sub get_session
 {
   my ($self) = @_;
   
-  $sid = $cgi->cookie("CGISESSID") || undef;
-  $session = new CGI::Session(undef, $sid, {Directory=>'/tmp'});
+  my $sid = CGI->new->cookie("CGISESSID") || undef;
+  my $session = new CGI::Session(undef, $sid, {Directory=>'/tmp'});
   return $session;
 }
 
@@ -66,7 +68,7 @@ sub get_sso_session
 {
   my ($self) = @_;
   
-  return (new MnoSsoSession($self->settings, $self->get_session()));
+  return (new MnoSsoSession($self->{settings}, $self->get_session()));
 }
 
 #
@@ -78,7 +80,7 @@ sub is_sso_enabled
 {
   my ($self) = @_;
   
-  return ($self->$settings && $self->settings->sso_enabled);
+  return ($self->$settings && $self->{settings}->sso_enabled);
 }
 
 #
@@ -90,7 +92,7 @@ sub is_sso_intranet_enabled
 {
   my ($self) = @_;
   
-  return ($self->is_sso_enabled() && $self->settings->sso_intranet_mode);
+  return ($self->is_sso_enabled() && $self->{settings}->sso_intranet_mode);
 }
 
 #
@@ -103,7 +105,7 @@ sub get_sso_init_url
 {
   my ($self) = @_;
   
-  return $self->settings->sso_init_url;
+  return $self->{settings}->sso_init_url;
 }
 
 #
@@ -116,7 +118,7 @@ sub get_sso_logout_url
 {
   my ($self) = @_;
   
-  return $self->settings->sso_access_logout_url;
+  return $self->{settings}->sso_access_logout_url;
 }
 
 #
@@ -129,7 +131,7 @@ sub get_sso_unauthorized_url
 {
   my ($self) = @_;
   
-  return $self->settings->sso_access_logout_url;
+  return $self->{settings}->sso_access_logout_url;
 }
 
 #
@@ -142,7 +144,7 @@ sub set_after_sso_sign_in_path
   my ($self,$path) = @_;
   
   if ($self->get_session()) {
-	  $session = $self->get_session();
+	  my $session = $self->get_session();
     $session->param('mno_previous_url', $path);
   }
 }
@@ -156,6 +158,6 @@ sub get_after_sso_sign_in_path
 {
   my ($self) = @_;
   
-  return $self->after_sso_sign_in_path;
+  return $self->{after_sso_sign_in_path};
 }
 

@@ -1,9 +1,13 @@
 use JSON qw( decode_json );
 use DateTime;
+use DateTime::Format::Strptime;
+#use DateTime::Format::ISO8601;
+use POSIX qw(strftime);
 use strict;
 use warnings;
 
 package MnoSsoBaseUser;
+
 
 # Constructor
 # Arguments:
@@ -21,14 +25,14 @@ sub new
   
   my $self = {
     session       => $session,
-    uid           => $assert_attrs->mno_uid,
-    sso_session   => $assert_attrs->sso_session,
-    sso_session_recheck => DateTime::Format::HTTP->parse_datetime($assert_attrs->sso_session_recheck),
-    name          => $assert_attrs->name,
-    surname       => $assert_attrs->surname,
-    email         => $assert_attrs->email,
-    app_owner     => $assert_attrs->app_owner,
-    organizations => decode_json($assert_attrs->organizations),
+    uid           => $assert_attrs->{mno_uid},
+    sso_session   => $assert_attrs->{sso_session},
+    sso_session_recheck => DateTime::Format::ISO8601->parse_datetime($assert_attrs->{sso_session_recheck}),
+    name          => $assert_attrs->{name},
+    surname       => $assert_attrs->{surname},
+    email         => $assert_attrs->{email},
+    app_owner     => $assert_attrs->{app_owner},
+    organizations => decode_json($assert_attrs->{organizations}),
   };
   
   bless($self, $class);
@@ -55,24 +59,24 @@ sub match_local
   my ($self) = @_;
   
   # Try to get the local id from uid
-  $self->{local_id} = $self->get_local_id_by_uid();
+  $self->local_id = $self->get_local_id_by_uid();
   
   # Get local id via email if previous search was unsucessful
-  if (!defined($self->{local_id})) {
+  if (!defined($self->local_id)) {
     $self->local_uid = $self->get_local_id_by_email();
     
     # Set Maestrano UID on user
-    if(defined($self->{local_id})) {
+    if(defined($self->local_id)) {
       $self->set_local_uid();
     }
   }
   
   # Sync local details if we have a match
-  if(defined($self->{local_id})) {
+  if(defined($self->local_id)) {
     $self->sync_local_details();
   }
   
-  return $self->{local_id};
+  return $self->local_id;
 }
 
 #
@@ -87,7 +91,7 @@ sub access_scope
 {
   my ($self) = @_;
   
-  if ($self->{local_id} || $self->app_owner || scalar(keys %$self->{organization}) > 0) {
+  if ($self->local_id || $self->{app_owner} || scalar(keys %$self->organization) > 0) {
     return 'private';
   }
   
@@ -104,17 +108,17 @@ sub create_local_user_or_deny_access
 {
   my ($self) = @_;
   
-  if (!defined($self->{local_id})) {
-   $self->{local_id} = $self->create_local_user();
+  if (!defined($self->local_id)) {
+   $self->local_id = $self->create_local_user();
 
     # If a user has been created successfully
     # then make sure UID is set on it
-    if ($self->{local_id}) {
+    if ($self->local_id) {
       $self->set_local_uid();
     }
  }
  
- return $self->{local_id};
+ return $self->local_id;
 }
 
 #
@@ -195,9 +199,15 @@ sub sign_in
 {
   my ($self) = @_;
   if ($self->set_in_session()) {
-    $self->session->param('mno_uid',$self->uid);
-    $self->session->param('mno_session'], $self->sso_session);
-    $self->session->param('mno_session_recheck'],$self->sso_session_recheck->format(DateTime::ISO8601));
+    # ISO8601 Date Formating
+    # We need to munge the timezone indicator to add a colon between the hour and minute part
+    my $tz = strftime("%z", localtime(time()));
+    $tz =~ s/(\d{2})(\d{2})/$1:$2/;
+    my $iso8601_recheck = strftime("%Y-%m-%dT%H:%M:%S", $self->{sso_session_recheck}) . $tz;
+    
+    $self->{session}->param('mno_uid',$self->{uid});
+    $self->{session}->param('mno_session', $self->{sso_session});
+    $self->{session}->param('mno_session_recheck',$iso8601_recheck);
   }
 }
 
@@ -211,11 +221,11 @@ sub generate_password
 {
   my ($self) = @_;
   my $length = 20;
-  my $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  my @characters = split('','0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
   my $randomString = '';
   
-  for ($i = 0; $i < $length; $i++) {
-      $randomString .= $characters[rand(0, strlen($characters) - 1)];
+  for (my $i = 0; $i < $length; $i++) {
+      $randomString .= $characters[rand(scalar(@characters))];
   }
   return $randomString;
 }
@@ -233,3 +243,5 @@ sub set_in_session
   my ($self) = @_;
   die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
 }
+
+1;
