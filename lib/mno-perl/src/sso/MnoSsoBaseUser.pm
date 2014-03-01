@@ -64,24 +64,24 @@ sub match_local
   my ($self) = @_;
   
   # Try to get the local id from uid
-  $self->local_id = $self->get_local_id_by_uid();
+  $self->{local_id} = $self->get_local_id_by_uid();
   
   # Get local id via email if previous search was unsucessful
-  if (!defined($self->local_id)) {
-    $self->local_uid = $self->get_local_id_by_email();
+  if (!defined($self->{local_id})) {
+    $self->{local_id} = $self->get_local_id_by_email();
     
     # Set Maestrano UID on user
-    if(defined($self->local_id)) {
+    if(defined($self->{local_id})) {
       $self->set_local_uid();
     }
   }
   
   # Sync local details if we have a match
-  if(defined($self->local_id)) {
+  if(defined($self->{local_id})) {
     $self->sync_local_details();
   }
   
-  return $self->local_id;
+  return $self->{local_id};
 }
 
 #
@@ -96,7 +96,7 @@ sub access_scope
 {
   my ($self) = @_;
   
-  if ($self->local_id || $self->{app_owner} || scalar(keys %$self->organization) > 0) {
+  if ($self->{local_id} || $self->{app_owner} || scalar(keys %$self->organization) > 0) {
     return 'private';
   }
   
@@ -113,17 +113,17 @@ sub create_local_user_or_deny_access
 {
   my ($self) = @_;
   
-  if (!defined($self->local_id)) {
-   $self->local_id = $self->create_local_user();
+  if (!defined($self->{local_id})) {
+   $self->{local_id} = $self->create_local_user();
 
     # If a user has been created successfully
     # then make sure UID is set on it
-    if ($self->local_id) {
+    if ($self->{local_id}) {
       $self->set_local_uid();
     }
  }
  
- return $self->local_id;
+ return $self->{local_id};
 }
 
 #

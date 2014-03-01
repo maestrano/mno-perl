@@ -80,7 +80,7 @@ sub is_sso_enabled
 {
   my ($self) = @_;
   
-  return ($self->$settings && $self->{settings}->sso_enabled);
+  return ($self->$settings && $self->{settings}->{sso_enabled});
 }
 
 #
@@ -92,7 +92,7 @@ sub is_sso_intranet_enabled
 {
   my ($self) = @_;
   
-  return ($self->is_sso_enabled() && $self->{settings}->sso_intranet_mode);
+  return ($self->is_sso_enabled() && $self->{settings}->{sso_intranet_mode});
 }
 
 #
@@ -105,7 +105,7 @@ sub get_sso_init_url
 {
   my ($self) = @_;
   
-  return $self->{settings}->sso_init_url;
+  return $self->{settings}->{sso_init_url};
 }
 
 #
@@ -118,7 +118,7 @@ sub get_sso_logout_url
 {
   my ($self) = @_;
   
-  return $self->{settings}->sso_access_logout_url;
+  return $self->{settings}->{sso_access_logout_url};
 }
 
 #
@@ -131,7 +131,7 @@ sub get_sso_unauthorized_url
 {
   my ($self) = @_;
   
-  return $self->{settings}->sso_access_logout_url;
+  return $self->{settings}->{sso_access_logout_url};
 }
 
 #

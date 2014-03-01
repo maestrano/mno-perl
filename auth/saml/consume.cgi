@@ -16,10 +16,10 @@ use CGI;
 use CGI::Session;
 use MIME::Base64 qw/ decode_base64 /;
 use Cwd 'abs_path';
+use Try::Tiny;
 
 # Init CGI
 my $cgi = CGI->new;
-print "Content-type: text/html\n\n";
 
 # Define root folder
 $ENV{MAESTRANO_ROOT} = abs_path(__FILE__ . '/../../../');
@@ -31,18 +31,6 @@ require $ENV{MAESTRANO_ROOT} . "/app/init/auth.pm";
 # Get Session
 my $sid = $cgi->cookie("CGISESSID") || undef;
 my $session = new CGI::Session(undef, $sid, {Directory=>'/tmp'});
-# session_start();
-# if(isset($_SESSION['mno_previous_url'])) {
-#   $previous_url = $_SESSION['mno_previous_url'];
-# }
-# session_unset();
-# session_destroy();
-# 
-# # Restart session and inject previous url if defined
-# session_start();
-# if(isset($previous_url)) {
-#   $_SESSION['mno_previous_url'] = $previous_url;
-# }
 
 # Get Maestrano Service
 my $maestrano = MaestranoService->instance();
@@ -60,9 +48,8 @@ my $ret = $post->handle_response($saml_response);
 my $assertion;
 if ($ret) {
   $assertion = Net::SAML2::Protocol::Assertion->new_from_xml(xml => decode_base64($saml_response));
-  print Dumper($assertion->attributes);
 }
-
+print "Content-type: text/html\n\n";
 try {
     if (defined($assertion)) {
         
@@ -74,7 +61,7 @@ try {
         
         # If user was not matched then attempt
         # to create a new local user
-        if (defined($sso_user->{local_id})) {
+        if (!$sso_user->{local_id}) {
           $sso_user->create_local_user_or_deny_access();
         }
         
@@ -82,17 +69,20 @@ try {
         # Refuse access otherwise
         if ($sso_user->{local_id}) {
           $sso_user->sign_in();
-          $cgi->redirect($maestrano->get_after_sso_sign_in_path())
+          $cgi->redirect($maestrano->get_after_sso_sign_in_path());
         } else {
-          $cgi->redirect($maestrano->get_sso_unauthorized_url())
+          $cgi->redirect($maestrano->get_sso_unauthorized_url());
         }
     }
     else {
+        
         print 'There was an error during the authentication process.<br/>';
         print 'Please try again. If issue persists please contact support@maestrano.com';
     }
-}
-catch {
+} catch {
+    print "Content-type: text/html\n\n";
     print 'There was an error during the authentication process.<br/>';
     print 'Please try again. If issue persists please contact support@maestrano.com';
-}
+    print '<br/><br/>';
+    print $_;
+};
