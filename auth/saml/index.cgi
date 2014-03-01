@@ -8,15 +8,11 @@ use strict;
 use CGI;
 use Cwd 'abs_path';
 
-# Define CGI
+# Init CGI
 my $q = CGI->new;
 
 # Define root folder
 $ENV{MAESTRANO_ROOT} = abs_path(__FILE__ . '/../../../');
-
-#print "Content-type: text/html\n\n";
-#print $ENV{MAESTRANO_ROOT};
-#print $ENV{MAESTRANO_ROOT} . "/app/init/auth.pm";
 
 # Load auth context
 require $ENV{MAESTRANO_ROOT} . "/app/init/auth.pm";
@@ -50,5 +46,3 @@ my $url = $redirect->sign($authnreq);
 print $q->redirect($url);
 
 # Confirm execution
-
-print "<br/><br/>BLAAAA<br/><br/>";

@@ -1,13 +1,19 @@
-use JSON qw( decode_json );
+
 use DateTime;
 use DateTime::Format::Strptime;
-#use DateTime::Format::ISO8601;
+use DateTime::Format::ISO8601;
 use POSIX qw(strftime);
+use Data::Dumper;
 use strict;
 use warnings;
 
 package MnoSsoBaseUser;
+use JSON qw( decode_json );
 
+# my $iso8601_parser = DateTime::Format::Strptime->new(
+#   pattern => '%B %d, %Y %I:%M %p %Z',
+#   on_error => 'croak',
+# );
 
 # Constructor
 # Arguments:
@@ -22,17 +28,16 @@ sub new
   
   my $assert_attrs = $saml_response->attributes;
   
-  
   my $self = {
     session       => $session,
-    uid           => $assert_attrs->{mno_uid},
-    sso_session   => $assert_attrs->{sso_session},
-    sso_session_recheck => DateTime::Format::ISO8601->parse_datetime($assert_attrs->{sso_session_recheck}),
-    name          => $assert_attrs->{name},
-    surname       => $assert_attrs->{surname},
-    email         => $assert_attrs->{email},
-    app_owner     => $assert_attrs->{app_owner},
-    organizations => decode_json($assert_attrs->{organizations}),
+    uid           => $assert_attrs->{mno_uid}[0],
+    sso_session   => $assert_attrs->{mno_session}[0],
+    sso_session_recheck => DateTime::Format::ISO8601->parse_datetime($assert_attrs->{mno_session_recheck}[0]),
+    name          => $assert_attrs->{name}[0],
+    surname       => $assert_attrs->{surname}[0],
+    email         => $assert_attrs->{email}[0],
+    app_owner     => ($assert_attrs->{app_owner}[0] eq 'true'),
+    organizations => decode_json($assert_attrs->{organizations}[0]),
   };
   
   bless($self, $class);
@@ -131,7 +136,7 @@ sub create_local_user_or_deny_access
 sub create_local_user
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 #
@@ -144,7 +149,7 @@ sub create_local_user
 sub get_local_id_by_uid
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 #
@@ -157,7 +162,7 @@ sub get_local_id_by_uid
 sub get_local_id_by_email
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 #
@@ -170,7 +175,7 @@ sub get_local_id_by_email
 sub set_local_uid
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 #
@@ -183,7 +188,7 @@ sub set_local_uid
 sub sync_local_details
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 #
@@ -241,7 +246,7 @@ sub generate_password
 sub set_in_session
 {
   my ($self) = @_;
-  die Exception->new('Function '. __LINE__ . ' must be overriden in MnoSsoUser class!');
+  die 'Function '. (caller(0))[3] . ' must be overriden in MnoSsoUser class!';
 }
 
 1;

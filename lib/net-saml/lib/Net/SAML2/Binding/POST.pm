@@ -45,8 +45,9 @@ sub handle_response {
     my $xml = decode_base64($response);
     my $x = Net::SAML2::XML::Sig->new({ x509 => 1 });
     my $ret = $x->verify($xml);
+    
     die "signature check failed" unless $ret;
-
+    
     # verify the signing certificate
     my $cert = $x->signer_cert;
     my $ca = Crypt::OpenSSL::VerifyX509->new($self->cacert);

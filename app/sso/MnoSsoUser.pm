@@ -14,12 +14,12 @@ our @ISA = qw(MnoSsoBaseUser);    # inherits from MnoSsoBaseUser
 # - opts (hash of options)
 sub new
 {
-  my ($class, $saml_response,$session,%opts) = @_;
+  my ($class, $saml_response,$session,$opts) = @_;
   
   my $self = $class->SUPER::new($saml_response, $session);
   
   # Define connection
-  $self->{connection} = $opts{'connection'};
+  $self->{connection} = $opts->{connection};
   
   bless($self, $class);
   return $self;

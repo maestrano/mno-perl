@@ -2,6 +2,8 @@
 # Require Library folder
 #-----------------------------------------------
 use Cwd 'abs_path';
+use Try::Tiny;
+use Data::Dumper;
 
 my $lib_path;
 my $app_path;
@@ -32,6 +34,8 @@ use lib $lib_path . '/net-saml/lib/';
 use Net::SAML2::IdP;
 use Net::SAML2::Binding::Redirect;
 use Net::SAML2::Protocol::AuthnRequest;
+use Net::SAML2::Binding::POST;
+use Net::SAML2::Protocol::Assertion;
 
 #-----------------------------------------------
 # Require Maestrano Libraries

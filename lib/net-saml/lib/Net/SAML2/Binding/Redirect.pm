@@ -79,8 +79,8 @@ sub sign {
 
     my $u = URI->new($self->url);
     $u->query_param($self->param, $req);
-    $u->query_param('RelayState', $relaystate) if defined $relaystate;
-    $u->query_param('SigAlg', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1');
+    #$u->query_param('RelayState', $relaystate) if defined $relaystate;
+    #$u->query_param('SigAlg', 'http://www.w3.org/2000/09/xmldsig#rsa-sha1');
     
     #my $key_string = read_file($self->key);
     #my $rsa_priv = Crypt::OpenSSL::RSA->new_private_key($key_string);

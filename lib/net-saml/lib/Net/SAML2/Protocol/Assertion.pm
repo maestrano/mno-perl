@@ -45,8 +45,8 @@ sub new_from_xml {
     $xpath->set_namespace('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
 
     my $attributes = {};
-    for my $node ($xpath->findnodes('//saml:Assertion/saml:AttributeStatement/saml:Attribute')) {
-        my @values = $node->findnodes('saml:AttributeValue');
+    for my $node ($xpath->findnodes('//Assertion/AttributeStatement/Attribute')) {
+        my @values = $node->findnodes('AttributeValue');
         $attributes->{$node->getAttribute('Name')} = [
             map { $_->string_value } @values
         ];
