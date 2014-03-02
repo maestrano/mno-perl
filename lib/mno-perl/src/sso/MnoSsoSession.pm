@@ -1,10 +1,13 @@
-use JSON qw( decode_json );
+
 use DateTime;
-use LWP::Simple;
+use LWP::UserAgent;
 use strict;
 use warnings;
-
+use DateTime::Format::ISO8601;
+use Data::Dumper;
+ 
 package MnoSsoSession;
+use JSON qw( decode_json );
 
 #
 # Construct the MnoSsoSession object
@@ -28,7 +31,7 @@ sub new
     session  => $session,
     uid      => $session->param('mno_uid'),
     token    => $session->param('mno_session'),
-    recheck  => DateTime::Format::HTTP->parse_datetime($session->param('mno_session_recheck')),
+    recheck  => DateTime::Format::ISO8601->parse_datetime($session->param('mno_session_recheck')),
   };
   
   bless($self, $class);
@@ -46,12 +49,12 @@ sub remote_check_required
 {
   my ($self) = @_;
   
-  if (defined($self->uid) && defined($self->token) && defined($self->recheck)) {
-   if ($self->recheck > (DateTime->now)) {
-     return undef;
+  if (defined($self->{uid}) && defined($self->{token}) && defined($self->{recheck})) {
+   if ($self->{recheck} > (DateTime->now)) {
+     return 0;
    }
   }
- 
+  
  return 1;
 }
  
@@ -65,7 +68,7 @@ sub session_check_url
 {
   my ($self) = @_;
   
-  my $url = $self->settings->sso_session_check_url . '/' . $self->uid . '?session=' . $self->token;
+  my $url = $self->{settings}->{sso_session_check_url} . '/' . $self->{uid} . '?session=' . $self->{token};
   return $url;
 }
 
@@ -79,7 +82,14 @@ sub fetch_url
 {
   my ($self,$url) = @_;
   
-  return get($url);
+  # Fetch URL content
+  my $ua = LWP::UserAgent->new;
+  my $req = HTTP::Request->new(GET => $url);
+  $req->header('content-type' => 'application/json');
+  my $resp = $ua->request($req);
+  my $content = $resp->decoded_content;
+  
+  return $content;
 }
   
 #
@@ -94,10 +104,10 @@ sub perform_remote_check
   my $json = $self->fetch_url($self->session_check_url());
  
   if ($json) {
-    my %response = decode_json($json);
+    my $response = decode_json($json);
   
-    if ($response{'valid'} && $response{'recheck'}) {
-      $self->recheck = DateTime::Format::HTTP->parse_datetime($response{'recheck'});
+    if ($response->{valid} && $response->{recheck}) {
+      $self->{recheck} = DateTime::Format::ISO8601->parse_datetime($response->{recheck});
       return 1;
     }
   }
@@ -120,13 +130,7 @@ sub is_valid
   
   if ($self->remote_check_required()) {
     if ($self->perform_remote_check()) {
-      # ISO8601 Date Formating
-      # We need to munge the timezone indicator to add a colon between the hour and minute part
-      my $tz = strftime("%z", localtime(time()));
-      $tz =~ s/(\d{2})(\d{2})/$1:$2/;
-      my $iso8601_recheck = strftime("%Y-%m-%dT%H:%M:%S", $self->recheck) . $tz;
-      
-      $self->session->param('mno_session_recheck',$iso8601_recheck);
+      $self->{session}->param('mno_session_recheck',$self->{recheck}->iso8601());
       
       return 1;
     } else {

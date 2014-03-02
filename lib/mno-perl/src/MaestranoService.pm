@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use CGI::Session;
 
 package MaestranoService;
 
@@ -80,7 +81,7 @@ sub is_sso_enabled
 {
   my ($self) = @_;
   
-  return ($self->$settings && $self->{settings}->{sso_enabled});
+  return ($self->{settings} && $self->{settings}->{sso_enabled});
 }
 
 #

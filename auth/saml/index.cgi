@@ -23,8 +23,6 @@ my $maestrano = MaestranoService->instance();
 # Build SAML IDP
 my $idp = Net::SAML2::IdP->new($maestrano->get_settings->get_saml_idp_settings);
 
-#print $maestrano->get_settings->get_saml_request_settings->{destination};
-
 # Build Request
 my $authnreq = Net::SAML2::Protocol::AuthnRequest->new($maestrano->get_settings->get_saml_request_settings)->as_xml;
 
@@ -40,9 +38,5 @@ my $redirect = Net::SAML2::Binding::Redirect->new(
 # # Generate URL
 my $url = $redirect->sign($authnreq);
 
-#print $url;
-# 
 # # Perform redirect
 print $q->redirect($url);
-
-# Confirm execution

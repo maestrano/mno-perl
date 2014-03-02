@@ -33,11 +33,24 @@ sub new
 #
 # Return boolean whether the user was successfully set in session or not
 #
-# sub set_in_session
-# {
-#   my ($self) = @_;
-#   
-# }
+sub set_in_session
+{
+  my ($self) = @_;
+  
+  # Grab the user first
+  my $user = new Bugzilla::User($self->{local_id});
+  
+  if($user) {
+    my $cookie = new Bugzilla::Auth::Persist::Cookie();
+    
+    # Put the user in session
+    $cookie->persist_login($user);
+    
+    return 1;
+  }
+  
+  return;
+}
 
 #
 # Create a local user based on the sso user

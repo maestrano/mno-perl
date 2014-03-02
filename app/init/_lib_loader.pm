@@ -19,12 +19,6 @@ use lib $lib_path . '/json/lib';
 use lib $lib_path . '/json/lib/JSON';
 
 #-----------------------------------------------
-# Require DateTime::Format::ISO8601
-#-----------------------------------------------
-use lib $lib_path . '/datetime/lib';
-use lib $lib_path . '/datetime-format-strptime/lib';
-
-#-----------------------------------------------
 # Require Net::SAML2 dependencies
 #-----------------------------------------------
 use lib $lib_path . '/uri-fromhash/lib';

@@ -28,6 +28,7 @@ use Bugzilla::Update;
 #-----------------------------------------------
 # Set options to pass to the MnoSsoUser
 #my $opts = {};
+$opts->{cgi} = Bugzilla->cgi;
 $opts->{connection} = Bugzilla->dbh;
 
 1;
