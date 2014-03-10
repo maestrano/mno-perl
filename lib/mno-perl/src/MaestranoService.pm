@@ -57,6 +57,7 @@ sub get_session
   
   my $sid = CGI->new->cookie("CGISESSID") || undef;
   my $session = new CGI::Session(undef, $sid, {Directory=>'/tmp'});
+  
   return $session;
 }
 

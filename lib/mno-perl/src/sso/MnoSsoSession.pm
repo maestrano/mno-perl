@@ -69,6 +69,7 @@ sub session_check_url
   my ($self) = @_;
   
   my $url = $self->{settings}->{sso_session_check_url} . '/' . $self->{uid} . '?session=' . $self->{token};
+  
   return $url;
 }
 

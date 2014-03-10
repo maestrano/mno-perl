@@ -91,7 +91,7 @@ sub access_scope
 {
   my ($self) = @_;
   
-  if ($self->{local_id} || $self->{app_owner} || scalar(keys %$self->organization) > 0) {
+  if ($self->{local_id} || $self->{app_owner} || scalar(keys $self->{organizations}) > 0) {
     return 'private';
   }
   
